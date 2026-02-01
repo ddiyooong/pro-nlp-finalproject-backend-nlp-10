@@ -44,3 +44,5 @@ pro-nlp-finalproject-backend-nlp-10/
 │       └── news.py        # 뉴스 벡터 검색 API
 ├── requirements.txt       # 의존성 패키지 목록
 └── README.md
+
++ 추가: api_client.py      # 외부 클라이언트에서 해당 endpoint로 요청 전송 예시
