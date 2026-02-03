@@ -1,0 +1,30 @@
+name: Deploy to EC2 # 워크플로우 이름
+
+on:
+  push:
+    branches: [ main ] # main 브랜치에 푸시될 때만 실행
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy using SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_KEY }}
+          # 여기서부터가 서버에서 실행될 명령어입니다.
+          script: |
+            cd /home/ubuntu/pro-nlp-finalproject-backend-nlp-10
+            git pull origin main
+            
+            # 3. 기존 tmux 세션이 있다면 죽이고 새로 실행
+            # || true는 세션이 없어도 에러를 내지 않고 다음으로 넘어가게 합니다.
+            tmux kill-session -t my-api || true
+            
+            # 4. 새 세션을 만들고 백그라운드(-d)에서 uvicorn 실행
+            tmux new-session -d -s my-api 'uvicorn main:app --host 0.0.0.0 --port 8000'
