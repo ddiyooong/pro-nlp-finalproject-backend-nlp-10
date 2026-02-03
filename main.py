@@ -10,6 +10,12 @@ origins = [
     "*"
 ]
 
+
+# DB에 테이블이 없으면 자동 생성 (CREATE TABLE IF NOT EXISTS)
+datatable.Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Commodity Price AI Server")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins, 
@@ -17,11 +23,6 @@ app.add_middleware(
     allow_methods=["*"],   
     allow_headers=["*"],   
 )
-
-# DB에 테이블이 없으면 자동 생성 (CREATE TABLE IF NOT EXISTS)
-datatable.Base.metadata.create_all(bind=engine)
-
-app = FastAPI(title="Commodity Price AI Server")
 
 # 라우터 등록
 app.include_router(predictions.router)
