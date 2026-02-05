@@ -21,6 +21,38 @@ class TftPredBase(BaseModel):
     top4_impact: Optional[float] = None
     top5_factor: Optional[str] = None
     top5_impact: Optional[float] = None
+    top6_factor: Optional[str] = None
+    top6_impact: Optional[float] = None
+    top7_factor: Optional[str] = None
+    top7_impact: Optional[float] = None
+    top8_factor: Optional[str] = None
+    top8_impact: Optional[float] = None
+    top9_factor: Optional[str] = None
+    top9_impact: Optional[float] = None
+    top10_factor: Optional[str] = None
+    top10_impact: Optional[float] = None
+    top11_factor: Optional[str] = None
+    top11_impact: Optional[float] = None
+    top12_factor: Optional[str] = None
+    top12_impact: Optional[float] = None
+    top13_factor: Optional[str] = None
+    top13_impact: Optional[float] = None
+    top14_factor: Optional[str] = None
+    top14_impact: Optional[float] = None
+    top15_factor: Optional[str] = None
+    top15_impact: Optional[float] = None
+    top16_factor: Optional[str] = None
+    top16_impact: Optional[float] = None
+    top17_factor: Optional[str] = None
+    top17_impact: Optional[float] = None
+    top18_factor: Optional[str] = None
+    top18_impact: Optional[float] = None
+    top19_factor: Optional[str] = None
+    top19_impact: Optional[float] = None
+    top20_factor: Optional[str] = None
+    top20_impact: Optional[float] = None
+
+    model_type: str
 
 class TftPredCreate(TftPredBase):
     pass
