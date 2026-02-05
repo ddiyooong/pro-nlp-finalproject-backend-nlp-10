@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, BigInteger, String, Date, Numeric, Text, ForeignKey, ARRAY, TIMESTAMP, Float
+from sqlalchemy import Column, Integer, BigInteger, String, Date, Numeric, Text, ForeignKey, ARRAY, TIMESTAMP, Float, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.types import UserDefinedType
@@ -9,6 +9,7 @@ class DocEmbeddings(Base):
     __tablename__ = "doc_embeddings"
 
     id = Column(BigInteger, primary_key=True, index=True) # bigserial
+    title = Column(String(255))
     content = Column(Text)
     source_url = Column(String(255))
     created_at = Column(TIMESTAMP, server_default=func.now())
@@ -57,6 +58,30 @@ class ExpPred(Base):
     pred_id = Column(Integer, ForeignKey("tft_pred.id"))
     content = Column(Text)
     llm_model = Column(String(50))
+    impact_news = Column(JSON)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     prediction = relationship("TftPred", back_populates="explanation")
+
+class MarketMetrics(Base):
+    __tablename__ = "market_metrics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    commodity = Column(String(50), index=True)
+    date = Column(Date, index=True)
+    metric_id = Column(String(50))
+    label = Column(String(255))
+    value = Column(String(50))
+    numeric_value = Column(Float)
+    trend = Column(Float)
+    impact = Column(String(20))
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+class HistoricalPrices(Base):
+    __tablename__ = "historical_prices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    commodity = Column(String(50), index=True)
+    date = Column(Date, index=True)
+    actual_price = Column(Numeric(10, 2))
+    created_at = Column(TIMESTAMP, server_default=func.now())

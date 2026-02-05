@@ -46,3 +46,5 @@ pro-nlp-finalproject-backend-nlp-10/
 └── README.md
 
 + 추가: api_client.py      # 외부 클라이언트에서 해당 endpoint로 요청 전송 예시
+
+ssh -i "키페어.pem" ubuntu@ec2-아이피.compute.amazonaws.com

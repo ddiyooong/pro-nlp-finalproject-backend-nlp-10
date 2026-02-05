@@ -77,3 +77,39 @@ def search_similar_docs(db: Session, query_vector: list, top_k: int = 5):
         .limit(top_k)\
         .all()
 """
+
+# --- [Market Metrics] ---
+
+# 9. 시장 지표 데이터 저장
+def create_market_metric(db: Session, item: dataschemas.MarketMetricCreate):
+    db_obj = datatable.MarketMetrics(**item.dict())
+    db.add(db_obj)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
+
+# 10. 특정 품목의 특정 날짜 시장 지표 조회
+def get_market_metrics(db: Session, commodity: str, target_date: date):
+    return db.query(datatable.MarketMetrics)\
+        .filter(datatable.MarketMetrics.commodity == commodity)\
+        .filter(datatable.MarketMetrics.date == target_date)\
+        .all()
+
+# --- [Historical Prices] ---
+
+# 11. 실제 가격 데이터 저장
+def create_historical_price(db: Session, item: dataschemas.HistoricalPriceCreate):
+    db_obj = datatable.HistoricalPrices(**item.dict())
+    db.add(db_obj)
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
+
+# 12. 특정 품목의 기간별 실제 가격 조회
+def get_historical_prices(db: Session, commodity: str, start_date: date, end_date: date):
+    return db.query(datatable.HistoricalPrices)\
+        .filter(datatable.HistoricalPrices.commodity == commodity)\
+        .filter(datatable.HistoricalPrices.date >= start_date)\
+        .filter(datatable.HistoricalPrices.date <= end_date)\
+        .order_by(datatable.HistoricalPrices.date.asc())\
+        .all()
