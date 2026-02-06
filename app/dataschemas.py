@@ -52,7 +52,7 @@ class TftPredBase(BaseModel):
     top20_factor: Optional[str] = None
     top20_impact: Optional[float] = None
 
-    model_type: str
+    model_type: str = "TFT"
 
 class TftPredCreate(TftPredBase):
     pass
