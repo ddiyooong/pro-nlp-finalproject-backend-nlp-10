@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app import datatable
 from app.database import engine
-from app.routers import predictions, newsdb, market_metrics, historical_prices, simulation
+from app.routers import predictions, newsdb, market_metrics, simulation, batch
 from fastapi.middleware.cors import CORSMiddleware
 
 origins = [
@@ -28,8 +28,8 @@ app.add_middleware(
 app.include_router(predictions.router)
 app.include_router(newsdb.router)
 app.include_router(market_metrics.router)
-app.include_router(historical_prices.router)
 app.include_router(simulation.router)
+app.include_router(batch.router)
 
 @app.get("/")
 def read_root():

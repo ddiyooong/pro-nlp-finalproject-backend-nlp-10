@@ -187,6 +187,12 @@ class HistoricalPricesResponse(BaseModel):
 
 #---------------------------------------------------------------------
 
+class PredictionsWithPricesResponse(BaseModel):
+    predictions: List[TftPredResponse]
+    historical_prices: List[HistoricalPriceItem]
+
+#---------------------------------------------------------------------
+
 class FeatureImpact(BaseModel):
     feature: str
     current_value: float
@@ -205,3 +211,66 @@ class SimulationResponse(BaseModel):
     change: float
     change_percent: float
     feature_impacts: List[FeatureImpact]
+
+#---------------------------------------------------------------------
+# 배치서버용 스키마 (Bulk / Upsert / Delete)
+#---------------------------------------------------------------------
+
+# --- TFT 예측 Bulk ---
+class TftPredBulkCreate(BaseModel):
+    predictions: List[TftPredCreate]
+
+# --- 뉴스 Bulk ---
+class NewsBulkCreate(BaseModel):
+    news_list: List[NewsCreate]
+
+# --- Market Metrics Bulk ---
+class MarketMetricBulkCreate(BaseModel):
+    commodity: str
+    date: date
+    metrics: List[MarketMetricItem]
+
+class MarketMetricUpsert(BaseModel):
+    commodity: str
+    date: date
+    metric_id: str
+    label: str = ""
+    value: str = ""
+    numeric_value: float = 0.0
+    trend: float = 0.0
+    impact: str = "neutral"
+
+class MarketMetricBulkUpsert(BaseModel):
+    commodity: str
+    date: date
+    metrics: List[MarketMetricItem]
+
+# --- Historical Prices Bulk ---
+class HistoricalPriceBulkCreate(BaseModel):
+    commodity: str
+    prices: List[HistoricalPriceItem]
+
+class HistoricalPriceUpsert(BaseModel):
+    commodity: str
+    date: date
+    actual_price: float
+
+class HistoricalPriceBulkUpsert(BaseModel):
+    commodity: str
+    prices: List[HistoricalPriceItem]
+
+# --- 공통 삭제 조건 ---
+class DeleteByDateRange(BaseModel):
+    commodity: str
+    start_date: date
+    end_date: date
+
+class DeleteByDate(BaseModel):
+    commodity: str
+    date: date
+
+# --- 응답 ---
+class BatchResult(BaseModel):
+    success: bool
+    message: str
+    count: int = 0

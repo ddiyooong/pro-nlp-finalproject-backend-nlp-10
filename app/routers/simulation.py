@@ -19,10 +19,9 @@ router = APIRouter(
 class SimulationValidator:
     """시뮬레이션 요청 검증"""
     
-    # 조정 가능한 Features
+    # 조정 가능한 Features (5개)
     VALID_FEATURES = {
-        '10Y_Yield', 'USD_Index', 'pdsi', 'spi30d', 'spi90d',
-        'close', 'open', 'high', 'low', 'volume', 'news_count'
+        '10Y_Yield', 'USD_Index', 'pdsi', 'spi30d', 'spi90d'
     }
     
     @staticmethod
@@ -96,7 +95,7 @@ def simulate_prediction(
     과거 60일의 시계열 데이터를 DB에서 로드하고,
     feature_overrides를 적용하여 재예측합니다.
     
-    조정 가능한 Features:
+    조정 가능한 Features (5개):
     - 10Y_Yield: 미국 10년물 국채 금리
     - USD_Index: 달러 인덱스
     - pdsi: Palmer Drought Severity Index
