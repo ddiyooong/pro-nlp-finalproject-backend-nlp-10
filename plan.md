@@ -20,7 +20,7 @@
 
 ```json
 {
-  "commodity": "Corn",
+  "commodity": "corn",
   "date": "2026-02-03",
   "metrics": [
     {
@@ -112,7 +112,7 @@
 
 ```json
 {
-  "commodity": "Corn",
+  "commodity": "corn",
   "prices": [
     {
       "date": "2026-01-15",
@@ -137,7 +137,7 @@
 
 ```json
 {
-  "commodity": "Corn",
+  "commodity": "corn",
   "base_date": "2026-02-03",
   "feature_overrides": {
     "WTI": 80.0,
@@ -318,14 +318,14 @@ erDiagram
 
 새 파일: `app/routers/market_metrics.py`
 
-- `GET /api/market-metrics?commodity=Corn&date=2026-02-03`
+- `GET /api/market-metrics?commodity=corn&date=2026-02-03`
 - DB에서 해당 품목/날짜의 모든 지표 조회 후 응답 포맷 변환
 
 ### 4.2 Historical Prices 라우터 추가
 
 새 파일: `app/routers/historical_prices.py`
 
-- `GET /api/historical-prices?commodity=Corn&start_date=...&end_date=...`
+- `GET /api/historical-prices?commodity=corn&start_date=...&end_date=...`
 - 기간별 실제 가격 데이터 조회
 
 ### 4.3 Simulation 라우터 추가
