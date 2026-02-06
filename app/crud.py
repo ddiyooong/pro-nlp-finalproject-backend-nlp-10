@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session, defer
-from sqlalchemy import func
+from sqlalchemy import func, and_
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from datetime import date, datetime, timedelta
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 from . import datatable, dataschemas
 
@@ -330,3 +331,279 @@ def get_historical_prices(
         .filter(datatable.HistoricalPrices.date <= end_date)\
         .order_by(datatable.HistoricalPrices.date.asc())\
         .all()
+
+
+# ===========================
+# TFT 예측 - Create / Delete
+# ===========================
+
+def create_tft_prediction(db: Session, data: dataschemas.TftPredCreate) -> datatable.TftPred:
+    """TFT 예측 단건 저장"""
+    record = datatable.TftPred(**data.model_dump())
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def create_tft_predictions_bulk(db: Session, items: List[dataschemas.TftPredCreate]) -> int:
+    """TFT 예측 벌크 저장 (7일치 등)"""
+    records = [datatable.TftPred(**item.model_dump()) for item in items]
+    db.add_all(records)
+    db.commit()
+    return len(records)
+
+
+def delete_tft_predictions(db: Session, commodity: str, start_date: date, end_date: date) -> int:
+    """조건부 예측 삭제 (commodity + date 범위)"""
+    count = db.query(datatable.TftPred).filter(
+        datatable.TftPred.commodity == commodity,
+        datatable.TftPred.target_date >= start_date,
+        datatable.TftPred.target_date <= end_date
+    ).delete(synchronize_session=False)
+    db.commit()
+    return count
+
+
+# ===========================
+# 예측 설명 - Create / Delete
+# ===========================
+
+def create_explanation(db: Session, data: dataschemas.ExpPredCreate) -> datatable.ExpPred:
+    """예측 설명 저장"""
+    record = datatable.ExpPred(**data.model_dump())
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def delete_explanation_by_pred_id(db: Session, pred_id: int) -> int:
+    """특정 예측의 설명 삭제"""
+    count = db.query(datatable.ExpPred).filter(
+        datatable.ExpPred.pred_id == pred_id
+    ).delete(synchronize_session=False)
+    db.commit()
+    return count
+
+
+# ===========================
+# 뉴스 임베딩 - Create / Delete
+# ===========================
+
+def create_news(db: Session, data: dataschemas.NewsCreate) -> datatable.DocEmbeddings:
+    """뉴스 단건 저장"""
+    record = datatable.DocEmbeddings(
+        title=data.title,
+        content=data.content,
+        source_url=data.source_url,
+        created_at=data.created_at,
+        embedding=data.embedding
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def create_news_bulk(db: Session, items: List[dataschemas.NewsCreate]) -> int:
+    """뉴스 벌크 저장"""
+    records = [
+        datatable.DocEmbeddings(
+            title=item.title,
+            content=item.content,
+            source_url=item.source_url,
+            created_at=item.created_at,
+            embedding=item.embedding
+        )
+        for item in items
+    ]
+    db.add_all(records)
+    db.commit()
+    return len(records)
+
+
+def delete_news_by_date(db: Session, before_date: date) -> int:
+    """특정 날짜 이전의 뉴스 삭제"""
+    count = db.query(datatable.DocEmbeddings).filter(
+        func.date(datatable.DocEmbeddings.created_at) < before_date
+    ).delete(synchronize_session=False)
+    db.commit()
+    return count
+
+
+# ===========================
+# 일일 요약 - Create / Delete
+# ===========================
+
+def create_daily_summary(db: Session, data: dataschemas.DailySummaryCreate) -> datatable.DailySummary:
+    """일일 요약 저장"""
+    record = datatable.DailySummary(**data.model_dump())
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def delete_daily_summary(db: Session, commodity: str, start_date: date, end_date: date) -> int:
+    """조건부 일일 요약 삭제"""
+    count = db.query(datatable.DailySummary).filter(
+        datatable.DailySummary.commodity == commodity,
+        datatable.DailySummary.target_date >= start_date,
+        datatable.DailySummary.target_date <= end_date
+    ).delete(synchronize_session=False)
+    db.commit()
+    return count
+
+
+# ===========================
+# 시장 지표 - Create / Bulk / Upsert / Delete
+# ===========================
+
+def create_market_metric(db: Session, data: dataschemas.MarketMetricCreate) -> datatable.MarketMetrics:
+    """시장 지표 단건 저장"""
+    record = datatable.MarketMetrics(**data.model_dump())
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def create_market_metrics_bulk(
+    db: Session, commodity: str, target_date: date, metrics: List[dataschemas.MarketMetricItem]
+) -> int:
+    """시장 지표 벌크 저장 (날짜당 46개 feature 등)"""
+    records = [
+        datatable.MarketMetrics(
+            commodity=commodity,
+            date=target_date,
+            metric_id=m.metric_id,
+            label=m.label,
+            value=m.value,
+            numeric_value=m.numeric_value,
+            trend=m.trend,
+            impact=m.impact
+        )
+        for m in metrics
+    ]
+    db.add_all(records)
+    db.commit()
+    return len(records)
+
+
+def upsert_market_metrics(
+    db: Session, commodity: str, target_date: date, metrics: List[dataschemas.MarketMetricItem]
+) -> int:
+    """
+    시장 지표 Upsert (commodity + date + metric_id 기준)
+    - 기존 데이터 있으면 Update, 없으면 Insert
+    """
+    count = 0
+    for m in metrics:
+        existing = db.query(datatable.MarketMetrics).filter(
+            datatable.MarketMetrics.commodity == commodity,
+            datatable.MarketMetrics.date == target_date,
+            datatable.MarketMetrics.metric_id == m.metric_id
+        ).first()
+
+        if existing:
+            existing.label = m.label
+            existing.value = m.value
+            existing.numeric_value = m.numeric_value
+            existing.trend = m.trend
+            existing.impact = m.impact
+        else:
+            db.add(datatable.MarketMetrics(
+                commodity=commodity,
+                date=target_date,
+                metric_id=m.metric_id,
+                label=m.label,
+                value=m.value,
+                numeric_value=m.numeric_value,
+                trend=m.trend,
+                impact=m.impact
+            ))
+        count += 1
+
+    db.commit()
+    return count
+
+
+def delete_market_metrics(db: Session, commodity: str, start_date: date, end_date: date) -> int:
+    """조건부 시장 지표 삭제"""
+    count = db.query(datatable.MarketMetrics).filter(
+        datatable.MarketMetrics.commodity == commodity,
+        datatable.MarketMetrics.date >= start_date,
+        datatable.MarketMetrics.date <= end_date
+    ).delete(synchronize_session=False)
+    db.commit()
+    return count
+
+
+# ===========================
+# 실제 가격 - Create / Bulk / Upsert / Delete
+# ===========================
+
+def create_historical_price(db: Session, data: dataschemas.HistoricalPriceCreate) -> datatable.HistoricalPrices:
+    """실제 가격 단건 저장"""
+    record = datatable.HistoricalPrices(**data.model_dump())
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def create_historical_prices_bulk(
+    db: Session, commodity: str, prices: List[dataschemas.HistoricalPriceItem]
+) -> int:
+    """실제 가격 벌크 저장"""
+    records = [
+        datatable.HistoricalPrices(
+            commodity=commodity,
+            date=p.date,
+            actual_price=p.actual_price
+        )
+        for p in prices
+    ]
+    db.add_all(records)
+    db.commit()
+    return len(records)
+
+
+def upsert_historical_prices(
+    db: Session, commodity: str, prices: List[dataschemas.HistoricalPriceItem]
+) -> int:
+    """
+    실제 가격 Upsert (commodity + date 기준)
+    - 기존 데이터 있으면 Update, 없으면 Insert
+    """
+    count = 0
+    for p in prices:
+        existing = db.query(datatable.HistoricalPrices).filter(
+            datatable.HistoricalPrices.commodity == commodity,
+            datatable.HistoricalPrices.date == p.date
+        ).first()
+
+        if existing:
+            existing.actual_price = p.actual_price
+        else:
+            db.add(datatable.HistoricalPrices(
+                commodity=commodity,
+                date=p.date,
+                actual_price=p.actual_price
+            ))
+        count += 1
+
+    db.commit()
+    return count
+
+
+def delete_historical_prices(db: Session, commodity: str, start_date: date, end_date: date) -> int:
+    """조건부 실제 가격 삭제"""
+    count = db.query(datatable.HistoricalPrices).filter(
+        datatable.HistoricalPrices.commodity == commodity,
+        datatable.HistoricalPrices.date >= start_date,
+        datatable.HistoricalPrices.date <= end_date
+    ).delete(synchronize_session=False)
+    db.commit()
+    return count

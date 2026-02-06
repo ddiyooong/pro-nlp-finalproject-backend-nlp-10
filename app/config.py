@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # ===========================
     # 모델 로딩 설정
     # ===========================
-    model_load_mode: str = "local"  # "local" 또는 "s3"
+    model_load_mode: str = "s3"  # "local" 또는 "s3"
     local_model_path: str = "./temp"
     
     @field_validator('model_load_mode')
@@ -76,11 +76,11 @@ class Settings(BaseSettings):
     # Feature 설정
     # ===========================
     adjustable_features: List[str] = [
-        "US_10Y_YIELD",      # 미국 10년물 국채 금리
-        "DXY",               # 달러 인덱스
-        "PDSI",              # Palmer Drought Severity Index
-        "SPI_30D",           # Standardized Precipitation Index (30일)
-        "SPI_90D"            # Standardized Precipitation Index (90일)
+        "10Y_Yield",         # 미국 10년물 국채 금리
+        "USD_Index",         # 달러 인덱스
+        "pdsi",              # Palmer Drought Severity Index
+        "spi30d",            # Standardized Precipitation Index (30일)
+        "spi90d",            # Standardized Precipitation Index (90일)
     ]
     
     # ===========================
